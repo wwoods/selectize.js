@@ -461,6 +461,12 @@ $.extend(Selectize.prototype, {
 			e.preventDefault();
 			return false;
 		}
+        else {
+            //For people with fat fingers, it's wise to trigger the loader on
+            //keyPress, not just keyUp.
+            var self = this;
+            setTimeout(function() {self.onKeyUp(e)}, 1);
+        }
 	},
 
 	/**
@@ -748,8 +754,9 @@ $.extend(Selectize.prototype, {
 			self.loading = Math.max(self.loading - 1, 0);
 			if (results && results.length) {
 				self.addOption(results);
-				self.refreshOptions(self.isFocused && !self.isInputHidden);
 			}
+            //Always refresh, in case loader cleared out prior options
+            self.refreshOptions(self.isFocused && !self.isInputHidden);
 			if (!self.loading) {
 				$wrapper.removeClass(self.settings.loadingClass);
 			}
@@ -1490,7 +1497,8 @@ $.extend(Selectize.prototype, {
 				if (!self.isPending) {
 					$option = self.getOption(value);
 					value_next = self.getAdjacentOption($option, 1).attr('data-value');
-					self.refreshOptions(self.isFocused && inputMode !== 'single');
+                    //Reload search options in case they changed
+                    self.onSearchChange(self.$control_input.val());
 					if (value_next) {
 						self.setActiveOption(self.getOption(value_next));
 					}
@@ -1815,6 +1823,7 @@ $.extend(Selectize.prototype, {
 		self.updateOriginalInput({silent: silent});
 		self.refreshState();
 		self.showInput();
+        self.onSearchChange('');
 		self.trigger('clear');
 	},
 
