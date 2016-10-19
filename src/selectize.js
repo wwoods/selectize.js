@@ -450,8 +450,14 @@ $.extend(Selectize.prototype, {
 	onKeyPress: function(e) {
 		if (this.isLocked) return e && e.preventDefault();
 		var character = String.fromCharCode(e.keyCode || e.which);
-		if (this.settings.create && this.settings.mode === 'multi' && character === this.settings.delimiter) {
-			this.createItem();
+		if (this.settings.mode === 'multi' && character === this.settings.delimiter) {
+            if (this.isOpen && this.$activeOption) {
+                this.onOptionSelect({currentTarget: this.$activeOption});
+            }
+            else {
+                //Try to create an item
+                this.createItem();
+            }
 			e.preventDefault();
 			return false;
 		}
