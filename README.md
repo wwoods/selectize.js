@@ -1,5 +1,8 @@
 # selectize.js
 
+!!! What this fork is about
+!!! 2016-10-19 - Direction-up merge
+
 [![NPM version](http://img.shields.io/npm/v/selectize.svg?style=flat)](https://www.npmjs.org/package/selectize)
 [![Build Status](http://img.shields.io/travis/selectize/selectize.js/master.svg?style=flat)](https://travis-ci.org/selectize/selectize.js)
 [![Coverage Status](http://img.shields.io/coveralls/selectize/selectize.js/master.svg?style=flat)](https://coveralls.io/r/selectize/selectize.js)
