@@ -31,7 +31,7 @@ Selectize.define('restore_on_backspace', function(options) {
 					option = this.options[this.items[index]];
 					if (this.deleteSelection(e)) {
 						this.setTextboxValue(options.text.apply(this, [option]));
-						this.refreshOptions(true);
+                        this.onSearchChange(this.$control_input.val());
 					}
 					e.preventDefault();
 					return;

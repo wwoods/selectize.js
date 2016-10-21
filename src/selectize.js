@@ -199,10 +199,14 @@ $.extend(Selectize.prototype, {
 			mousedown : function(e) { e.stopPropagation(); },
 			keydown   : function() { return self.onKeyDown.apply(self, arguments); },
 			keyup     : function() { return self.onKeyUp.apply(self, arguments); },
-			keypress  : function() { return self.onKeyPress.apply(self, arguments); },
+			input     : function(e) {
+                var lv = $(this).data('lastVal');
+                $(this).data('lastVal', this.value);
+                return self.onKeyPress.call(self, e, this.value, lv);
+            },
 			resize    : function() { self.positionDropdown.apply(self, []); },
 			blur      : function() { return self.onBlur.apply(self, arguments); },
-			focus     : function() { self.ignoreBlur = false; return self.onFocus.apply(self, arguments); },
+			focus     : function() { $(this).data('lastVal', this.value); self.ignoreBlur = false; return self.onFocus.apply(self, arguments); },
 			paste     : function() { return self.onPaste.apply(self, arguments); }
 		});
 
@@ -442,15 +446,41 @@ $.extend(Selectize.prototype, {
 	},
 
 	/**
-	 * Triggered on <input> keypress.
+	 * Triggered on <input> input event.  Not keypress due to android.
 	 *
 	 * @param {object} e
 	 * @returns {boolean}
 	 */
-	onKeyPress: function(e) {
+	onKeyPress: function(e, newInput, oldInput) {
 		if (this.isLocked) return e && e.preventDefault();
-		var character = String.fromCharCode(e.keyCode || e.which);
-		if (this.settings.mode === 'multi' && character === this.settings.delimiter) {
+
+        //Diff the text
+        var findDelta = function(value, prev) {
+            var delta = '';
+            var deltaI = null;
+            for (var i = 0, m = value.length; i < m; i++) {
+                var str = value.substr(0, i) + value.substr(i + value.length
+                        - prev.length);
+                if (str === prev) {
+                    delta = value.substr(i, value.length - prev.length);
+                    deltaI = i;
+                    break;
+                }
+            }
+            return [delta, deltaI];
+        };
+        var added = findDelta(newInput, oldInput);
+        var removed = findDelta(oldInput, newInput);
+        var pasted = (added[0].length > 1 || (!added && !removed));
+
+        //Discern if there was a single character added to the end, which
+        //should trigger our add.
+        var character = null;
+        if (added[0].length === 1 && added[1] === newInput.length - 1) {
+            character = added[0];
+        }
+
+		if (this.settings.mode === 'multi' && (character === this.settings.delimiter || character == ' ' && this.settings.selectOnSpace)) {
             if (this.isOpen && this.$activeOption) {
                 this.onOptionSelect({currentTarget: this.$activeOption});
             }
@@ -463,9 +493,12 @@ $.extend(Selectize.prototype, {
 		}
         else {
             //For people with fat fingers, it's wise to trigger the loader on
-            //keyPress, not just keyUp.
+            //keyPress, not just keyUp (since the next key might be pressed
+            //before the first is released).
+            //A null event is used since this one comes from input event...
+            //See http://therealmofcode.com/posts/2014/03/where-is-keypress-event-chrome-android.html
             var self = this;
-            setTimeout(function() {self.onKeyUp(e)}, 1);
+            setTimeout(function() {self.onKeyUp(null)}, 0);
         }
 	},
 
@@ -946,6 +979,23 @@ $.extend(Selectize.prototype, {
 		this.$control_input.css({opacity: 1, position: 'relative', left: 0});
 		this.isInputHidden = false;
 	},
+
+    /**
+     * In case of attribute changes on control input, blurs and then refocuses
+     * the control properly.
+     * */
+    refocus: function() {
+        var self = this;
+        if (self.isDisabled || !self.isFocused) return;
+
+        self.ignoreFocus = true;
+        self.$control_input[0].blur();
+        window.setTimeout(function() {
+            self.$control_input[0].focus();
+            self.isFocused = true;
+            self.ignoreFocus = false;
+        }, 0);
+    },
 
 	/**
 	 * Gives the control focus.
