@@ -988,9 +988,11 @@ $.extend(Selectize.prototype, {
         var self = this;
         if (self.isDisabled || !self.isFocused) return;
 
-        self.ignoreFocus = true;
-        self.$control_input[0].blur();
+        //Tried jQuery.clone(true), replaceWith... no dice.  A timeout seems
+        //important though.
         window.setTimeout(function() {
+            self.ignoreFocus = true;
+            self.$control_input[0].blur();
             self.$control_input[0].focus();
             self.isFocused = true;
             self.ignoreFocus = false;
